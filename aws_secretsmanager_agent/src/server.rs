@@ -164,7 +164,7 @@ impl Server {
                     )
                     .await?)
             }
-            (&Method::POST, "/evict") => {
+            (&Method::POST, "/secretsmanager/evict") => {
                 let qry = GSVQuery::try_from_query(&req.uri().to_string())?;
                 Ok(self
                     .cache_mgr
