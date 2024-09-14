@@ -35,7 +35,6 @@ struct ConfigFile {
     path_prefix: String,
     max_conn: String,
     region: Option<String>,
-    allow_eviction: String,
 }
 
 /// The log levels supported by the daemon.
@@ -94,8 +93,6 @@ pub struct Config {
 
     /// The AWS Region that will be used to send the Secrets Manager request to.
     region: Option<String>,
-
-    allow_eviction: bool,
 }
 
 /// The default configuration options.
@@ -137,8 +134,7 @@ impl Config {
             )?
             .set_default("path_prefix", DEFAULT_PATH_PREFIX)?
             .set_default("max_conn", DEFAULT_MAX_CONNECTIONS)?
-            .set_default("region", DEFAULT_REGION)?
-            .set_default("allow_eviction", "true")?;
+            .set_default("region", DEFAULT_REGION)?;
 
         // Merge the config overrides onto the default configurations, if provided.
         config = match file_path {
@@ -232,10 +228,6 @@ impl Config {
         self.region.as_ref()
     }
 
-    pub fn allow_eviction(&self) -> bool {
-        self.allow_eviction
-    }
-
     /// Private helper that fills in the Config instance from the specified
     /// config overrides (or defaults).
     ///
@@ -283,7 +275,6 @@ impl Config {
                 None,
             )?,
             region: config_file.region,
-            allow_eviction: parse_bool(&config_file.allow_eviction, "Invalid allow_eviction value")?,
         };
 
         // Additional validations.
@@ -298,14 +289,6 @@ impl Config {
         }
 
         Ok(config)
-    }
-}
-
-fn parse_bool(value: &str, error_msg: &str) -> Result<bool, Box<dyn std::error::Error>> {
-    match value.to_lowercase().as_str() {
-        "true" => Ok(true),
-        "false" => Ok(false),
-        _ => Err(error_msg.into()),
     }
 }
 
@@ -374,7 +357,6 @@ mod tests {
             path_prefix: String::from(DEFAULT_PATH_PREFIX),
             max_conn: String::from(DEFAULT_MAX_CONNECTIONS),
             region: None,
-            allow_eviction: String::from("true"),
         }
     }
 
@@ -400,7 +382,6 @@ mod tests {
         assert_eq!(config.clone().path_prefix(), DEFAULT_PATH_PREFIX);
         assert_eq!(config.clone().max_conn(), 800);
         assert_eq!(config.clone().region(), None);
-        assert_eq!(config.allow_eviction(), true);
     }
 
     /// Tests the config overrides are applied correctly from the provided config file.
@@ -425,7 +406,6 @@ mod tests {
         assert_eq!(config.clone().path_prefix(), "/other");
         assert_eq!(config.clone().max_conn(), 10);
         assert_eq!(config.clone().region(), Some(&"us-west-2".to_string()));
-        assert_eq!(config.allow_eviction(), true);
     }
 
     /// Tests that an Err is returned when an invalid value is provided in one of the configurations.
@@ -616,26 +596,5 @@ mod tests {
             "tests/resources/configs/config_file_with_invalid_contents.toml",
         ))
         .unwrap();
-    }
-
-    #[test]
-    fn test_validate_allow_eviction() {
-        let valid_values = vec!["true", "false", "True", "False", "TRUE", "FALSE"];
-        for value in valid_values {
-            let config = ConfigFile {
-                allow_eviction: value.to_string(),
-                ..get_default_config_file()
-            };
-            assert!(Config::build(config).is_ok());
-        }
-
-        let invalid_values = vec!["yes", "no", "1", "0", "invalid"];
-        for value in invalid_values {
-            let config = ConfigFile {
-                allow_eviction: value.to_string(),
-                ..get_default_config_file()
-            };
-            assert!(Config::build(config).is_err());
-        }
     }
 }

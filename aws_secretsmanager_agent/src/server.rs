@@ -25,7 +25,6 @@ pub struct Server {
     ssrf_headers: Arc<Vec<String>>,
     path_prefix: Arc<String>,
     max_conn: usize,
-    allow_eviction: bool,
 }
 
 /// Handle incoming HTTP requests.
@@ -55,7 +54,6 @@ impl Server {
             ssrf_headers: Arc::new(cfg.ssrf_headers()),
             path_prefix: Arc::new(cfg.path_prefix()),
             max_conn: cfg.max_conn(),
-            allow_eviction: cfg.allow_eviction(),
         })
     }
 
@@ -167,9 +165,6 @@ impl Server {
                     .await?)
             }
             (&Method::POST, "/evict") => {
-                if !self.allow_eviction {
-                    return Err(HttpError(403, "Eviction not allowed".into()));
-                }
                 let qry = GSVQuery::try_from_query(&req.uri().to_string())?;
                 Ok(self
                     .cache_mgr
