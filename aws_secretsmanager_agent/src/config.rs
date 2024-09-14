@@ -138,7 +138,7 @@ impl Config {
             .set_default("path_prefix", DEFAULT_PATH_PREFIX)?
             .set_default("max_conn", DEFAULT_MAX_CONNECTIONS)?
             .set_default("region", DEFAULT_REGION)?
-            .set_default("allow_eviction", "false")?;
+            .set_default("allow_eviction", "true")?;
 
         // Merge the config overrides onto the default configurations, if provided.
         config = match file_path {
