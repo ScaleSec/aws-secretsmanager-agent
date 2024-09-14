@@ -137,7 +137,7 @@ impl Server {
     ) -> Result<String, HttpError> {
         self.validate_max_conn(req, count)?; // Verify connection limits are not exceeded
         self.validate_token(req)?; // Check for a valid SSRF token
-        self.validate_method(req)?; // Allow only GET requests
+        self.validate_method(req)?; // Allow only GET and POST requests
 
         match (req.method(), req.uri().path()) {
             (&Method::GET, "/ping") => Ok("healthy".into()),  // Standard health check
