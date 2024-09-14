@@ -29,6 +29,14 @@ pub trait SecretStore: Debug + Send + Sync {
         version_stage: Option<String>,
         data: GetSecretValueOutputDef,
     ) -> Result<(), SecretStoreError>;
+
+    /// Remove the secret value from the store
+    fn remove_secret_value(
+        &mut self,
+        secret_id: &str,
+        version_id: Option<&str>,
+        version_stage: Option<&str>,
+    ) -> Result<(), SecretStoreError>;
 }
 
 /// All possible error types

@@ -94,6 +94,21 @@ impl SecretStore for MemoryStore {
 
         Ok(())
     }
+
+    fn remove_secret_value(
+        &mut self,
+        secret_id: &str,
+        version_id: Option<&str>,
+        version_stage: Option<&str>,
+    ) -> Result<(), SecretStoreError> {
+        let key = Key {
+            secret_id: secret_id.to_string(),
+            version_id: version_id.map(String::from),
+            version_stage: version_stage.map(String::from),
+        };
+        self.gsv_cache.remove(&key);
+        Ok(())
+    }
 }
 
 /// Write the secret value to the store
@@ -273,6 +288,31 @@ mod tests {
             Err(SecretStoreError::ResourceNotFound) => (),
             Ok(r) => panic!("Expected error, got {:?}", r),
             Err(e) => panic!("Unexpected error: {}", e),
+        }
+    }
+
+    #[test]
+    fn memory_store_remove_secret_value() {
+        let mut store = MemoryStore::default();
+
+        store_secret(&mut store, None, None, None);
+
+        // Verify the secret exists
+        assert!(store.get_secret_value(NAME, None, None).is_ok());
+
+        // Remove the secret
+        assert!(store.remove_secret_value(NAME, None, None).is_ok());
+
+        // Verify the secret no longer exists
+        match store.get_secret_value(NAME, None, None) {
+            Err(SecretStoreError::ResourceNotFound) => (),
+            _ => panic!("Expected ResourceNotFound error"),
+        }
+
+        // Attempt to remove a non-existent secret
+        match store.remove_secret_value("non_existent", None, None) {
+            Err(SecretStoreError::ResourceNotFound) => (),
+            _ => panic!("Expected ResourceNotFound error"),
         }
     }
 }
