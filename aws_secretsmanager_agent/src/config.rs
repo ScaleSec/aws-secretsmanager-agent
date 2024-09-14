@@ -374,7 +374,7 @@ mod tests {
             path_prefix: String::from(DEFAULT_PATH_PREFIX),
             max_conn: String::from(DEFAULT_MAX_CONNECTIONS),
             region: None,
-            allow_eviction: String::from("false"),
+            allow_eviction: String::from("true"),
         }
     }
 
@@ -400,7 +400,7 @@ mod tests {
         assert_eq!(config.clone().path_prefix(), DEFAULT_PATH_PREFIX);
         assert_eq!(config.clone().max_conn(), 800);
         assert_eq!(config.clone().region(), None);
-        assert_eq!(config.allow_eviction(), false);
+        assert_eq!(config.allow_eviction(), true);
     }
 
     /// Tests the config overrides are applied correctly from the provided config file.
