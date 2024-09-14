@@ -296,6 +296,17 @@ impl SecretsManagerCachingClient {
 
         Ok(false)
     }
+
+    /// Invalidates a secret in the cache, forcing a refresh on the next retrieval.
+    ///
+    /// # Arguments
+    ///
+    /// * `secret_id` - The ARN or name of the secret to invalidate.
+    pub async fn invalidate(&self, secret_id: &str) -> Result<(), Box<dyn Error>> {
+        let mut write_lock = self.store.write().await;
+        write_lock.invalidate(secret_id)?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
