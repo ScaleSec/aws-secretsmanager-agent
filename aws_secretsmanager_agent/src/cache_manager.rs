@@ -92,9 +92,14 @@ impl CacheManager {
         }
     }
 
-    pub async fn evict_entry(&self, secret_id: &str) -> Result<(), HttpError> {
-        match self.0.remove_secret_value(secret_id) {
-            Ok(_) => Ok(()),
+    pub async fn evict_entry(
+        &self,
+        secret_id: &str,
+        version: Option<&str>,
+        label: Option<&str>
+    ) -> Result<String, HttpError> {
+        match self.0.remove_secret_value(secret_id, version, label).await {
+            Ok(_) => Ok("Secret successfully evicted".to_string()),
             Err(e) => {
                 error!("Failed to evict secret {}: {:?}", secret_id, e);
                 Err(HttpError(500, err_response("EvictionError", "Failed to evict secret")))

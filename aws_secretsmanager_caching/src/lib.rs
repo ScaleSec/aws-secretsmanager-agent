@@ -297,14 +297,21 @@ impl SecretsManagerCachingClient {
         Ok(false)
     }
 
-    /// Invalidates a secret in the cache, forcing a refresh on the next retrieval.
+    /// Removes a secret in the cache, forcing a refresh on the next retrieval.
     ///
     /// # Arguments
     ///
-    /// * `secret_id` - The ARN or name of the secret to invalidate.
-    pub async fn invalidate(&self, secret_id: &str) -> Result<(), Box<dyn Error>> {
+    /// * `secret_id` - The ARN or name of the secret to remove.
+    /// * `version_id` - The version id of the secret version to remove.
+    /// * `version_stage` - The staging label of the version of the secret to remove.
+    pub async fn remove_secret_value(
+        &self,
+        secret_id: &str,
+        version_id: Option<&str>,
+        version_stage: Option<&str>,
+    ) -> Result<(), Box<dyn Error>> {
         let mut write_lock = self.store.write().await;
-        write_lock.remove_secret_value(secret_id)?;
+        write_lock.remove_secret_value(secret_id, version_id, version_stage)?;
         Ok(())
     }
 }

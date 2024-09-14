@@ -170,19 +170,20 @@ impl Server {
                 if !self.allow_eviction {
                     return Err(HttpError(403, "Eviction not allowed".into()));
                 }
-                self.handle_eviction_request(req).await
+                let qry = GSVQuery::try_from_query(&req.uri().to_string())?;
+                Ok(self
+                    .cache_mgr
+                    .evict_entry(
+                        &qry.secret_id,
+                        qry.version_id.as_deref(),
+                        qry.version_stage.as_deref(),
+                    )
+                    .await?)
             }
             _ => Err(HttpError(404, "Not found".into())),
         }
     }
 
-    async fn handle_eviction_request(&self, req: &Request<IncomingBody>) -> Result<String, HttpError> {
-        let body_bytes = hyper::body::to_bytes(req.into_body()).await.map_err(|_| HttpError(400, "Invalid request body".into()))?;
-        let secret_id = String::from_utf8(body_bytes.to_vec()).map_err(|_| HttpError(400, "Invalid secret ID".into()))?;
-        
-        self.cache_mgr.evict_entry(&secret_id).await?;
-        Ok(format!("Successfully evicted secret: {}", secret_id))
-    }
 
     /// Verify the incoming request does not exceed the maximum connection limit.
     ///
