@@ -304,7 +304,7 @@ impl SecretsManagerCachingClient {
     /// * `secret_id` - The ARN or name of the secret to invalidate.
     pub async fn invalidate(&self, secret_id: &str) -> Result<(), Box<dyn Error>> {
         let mut write_lock = self.store.write().await;
-        write_lock.invalidate(secret_id)?;
+        write_lock.remove_secret_value(secret_id)?;
         Ok(())
     }
 }
