@@ -106,9 +106,12 @@ impl SecretStore for MemoryStore {
             version_id: version_id.map(String::from),
             version_stage: version_stage.map(String::from),
         };
-        self.gsv_cache.remove(&key);
-        Ok(())
-    }
+        if self.gsv_cache.remove(&key).is_none() {
+            Err(SecretStoreError::ResourceNotFound)
+        } else {
+            Ok(())
+        }
+    }    
 }
 
 /// Write the secret value to the store
