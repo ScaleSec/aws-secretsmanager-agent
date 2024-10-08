@@ -92,7 +92,30 @@ impl CacheManager {
         }
     }
 
-    pub async fn evict_entry(
+    /// Evict a secret from the cache.
+    ///
+    /// # Arguments
+    ///
+    /// * `secret_id` - The name of the secret to evict.
+    /// * `version` - The version of the secret to evict.
+    /// * `label` - The label of the secret to evict.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(String)` - Success message.
+    /// * `Err((u16, String))` - The error code and message.
+    ///
+    /// # Errors
+    ///
+    /// * `HttpError` - The error returned from the SDK.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let cache_manager = CacheManager::new().await.unwrap();
+    /// let message = cache_manager.evict("my-secret", None, None).unwrap();
+    /// ```
+    pub async fn evict(
         &self,
         secret_id: &str,
         version: Option<&str>,

@@ -168,7 +168,7 @@ impl Server {
                 let qry = GSVQuery::try_from_query(&req.uri().to_string())?;
                 Ok(self
                     .cache_mgr
-                    .evict_entry(
+                    .evict(
                         &qry.secret_id,
                         qry.version_id.as_deref(),
                         qry.version_stage.as_deref(),
