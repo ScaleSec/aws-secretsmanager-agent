@@ -842,9 +842,9 @@ mod tests {
 
     // Verify requests using the wrong verbs fail with 405.
     #[tokio::test]
-    async fn get_only() {
+    async fn get_and_post_only() {
         for verb in [
-            "POST", "PUT", "PATCH", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE",
+            "PUT", "PATCH", "DELETE", "HEAD", "CONNECT", "OPTIONS", "TRACE",
         ] {
             let (status, _) =
                 run_requests_with_verb(vec![(verb, "/secretsmanager/get?secretId=MyTest")])

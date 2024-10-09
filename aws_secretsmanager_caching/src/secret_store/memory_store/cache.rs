@@ -48,8 +48,17 @@ impl<K: Hash + Eq, V> Cache<K, V> {
     {
         self.entries.get(key)
     }
-}
 
+    /// Removes a key-value pair from the cache.
+    /// Returns the value if the key was present in the cache, None otherwise.
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
+    where
+        Q: ?Sized + Hash + Eq,
+        K: Borrow<Q>,
+    {
+        self.entries.remove(key)
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -112,5 +121,20 @@ mod tests {
         assert_eq!(cache.len(), 1);
         let items: Vec<usize> = cache.entries.iter().map(|t| (*t.1)).collect();
         assert_eq!(items, [2]);
+    }
+
+    #[test]
+    fn remove_evicts_entry() {
+        let mut cache = TestIntCache::new(NonZeroUsize::new(4).unwrap());
+
+        cache.insert("test1".to_string(), 1);
+        cache.insert("test2".to_string(), 2);
+
+        assert_eq!(cache.remove("test1"), Some(1));
+        assert_eq!(cache.len(), 1);
+        assert_eq!(cache.get("test1"), None);
+        assert_eq!(cache.get("test2"), Some(&2));
+
+        assert_eq!(cache.remove("non_existent"), None);
     }
 }

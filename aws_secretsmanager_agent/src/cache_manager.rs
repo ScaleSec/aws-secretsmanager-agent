@@ -91,8 +91,45 @@ impl CacheManager {
             }
         }
     }
-}
 
+    /// Evict a secret from the cache.
+    ///
+    /// # Arguments
+    ///
+    /// * `secret_id` - The name of the secret to evict.
+    /// * `version` - The version of the secret to evict.
+    /// * `label` - The label of the secret to evict.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(String)` - Success message.
+    /// * `Err((u16, String))` - The error code and message.
+    ///
+    /// # Errors
+    ///
+    /// * `HttpError` - The error returned from the SDK.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let cache_manager = CacheManager::new().await.unwrap();
+    /// let message = cache_manager.evict("my-secret", None, None).unwrap();
+    /// ```
+    pub async fn evict(
+        &self,
+        secret_id: &str,
+        version: Option<&str>,
+        label: Option<&str>
+    ) -> Result<String, HttpError> {
+        match self.0.remove_secret_value(secret_id, version, label).await {
+            Ok(_) => Ok("Secret successfully evicted".to_string()),
+            Err(e) => {
+                error!("Failed to evict secret {}: {:?}", secret_id, e);
+                Err(HttpError(500, err_response("EvictionError", "Failed to evict secret")))
+            }
+        }
+    }
+}
 /// Private helper to format in internal service error response.
 #[doc(hidden)]
 fn int_err() -> HttpError {

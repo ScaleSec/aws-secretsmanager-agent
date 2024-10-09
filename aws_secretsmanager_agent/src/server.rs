@@ -29,14 +29,14 @@ pub struct Server {
 
 /// Handle incoming HTTP requests.
 ///
-/// Implements the HTTP handler. Each incomming request is handled in its own
+/// Implements the HTTP handler. Each incoming request is handled in its own
 /// thread.
 impl Server {
     /// Create a server instance.
     ///
     /// # Arguments
     ///
-    /// * `listener` - The TcpListener to use to accept incomming requests.
+    /// * `listener` - The TcpListener to use to accept incoming requests.
     /// * `cfg` - The config object to use for options such header names.
     ///
     /// # Returns
@@ -87,11 +87,11 @@ impl Server {
         Ok(())
     }
 
-    /// Private helper to process the incomming request body and format a response.
+    /// Private helper to process the incoming request body and format a response.
     ///
     /// # Arguments
     ///
-    /// * `req` - The incomming HTTP request.
+    /// * `req` - The incoming HTTP request.
     /// * `count` - The number of concurrent requets being handled.
     ///
     /// # Returns
@@ -118,11 +118,11 @@ impl Server {
         }
     }
 
-    /// Parse an incomming request and provide the response data.
+    /// Parse an incoming request and provide the response data.
     ///
     /// # Arguments
     ///
-    /// * `req` - The incomming HTTP request.
+    /// * `req` - The incoming HTTP request.
     /// * `count` - The number of concurrent requets being handled.
     ///
     /// # Returns
@@ -137,13 +137,11 @@ impl Server {
     ) -> Result<String, HttpError> {
         self.validate_max_conn(req, count)?; // Verify connection limits are not exceeded
         self.validate_token(req)?; // Check for a valid SSRF token
-        self.validate_method(req)?; // Allow only GET requests
+        self.validate_method(req)?; // Allow only GET and POST requests
 
-        match req.uri().path() {
-            "/ping" => Ok("healthy".into()), // Standard health check
-
-            // Lambda extension style query
-            "/secretsmanager/get" => {
+        match (req.method(), req.uri().path()) {
+            (&Method::GET, "/ping") => Ok("healthy".into()),  // Standard health check
+            (&Method::GET, "/secretsmanager/get") => { // Lambda extension style query
                 let qry = GSVQuery::try_from_query(&req.uri().to_string())?;
                 Ok(self
                     .cache_mgr
@@ -154,9 +152,8 @@ impl Server {
                     )
                     .await?)
             }
-
             // Path style request
-            path if path.starts_with(self.path_prefix.as_str()) => {
+            (&Method::GET, path) if path.starts_with(self.path_prefix.as_str()) => {
                 let qry = GSVQuery::try_from_path_query(&req.uri().to_string(), &self.path_prefix)?;
                 Ok(self
                     .cache_mgr
@@ -167,17 +164,29 @@ impl Server {
                     )
                     .await?)
             }
+            (&Method::POST, "/secretsmanager/evict") => {
+                let qry = GSVQuery::try_from_query(&req.uri().to_string())?;
+                Ok(self
+                    .cache_mgr
+                    .evict(
+                        &qry.secret_id,
+                        qry.version_id.as_deref(),
+                        qry.version_stage.as_deref(),
+                    )
+                    .await?)
+            }
             _ => Err(HttpError(404, "Not found".into())),
         }
     }
 
-    /// Verify the incomming request does not exceed the maximum connection limit.
+
+    /// Verify the incoming request does not exceed the maximum connection limit.
     ///
     /// The limit is not enforced for ping/health checks.
     ///
     /// # Arguments
     ///
-    /// * `req` - The incomming HTTP request.
+    /// * `req` - The incoming HTTP request.
     /// * `count` - The number of concurrent requets being handled.
     ///
     /// # Returns
@@ -209,7 +218,7 @@ impl Server {
     ///
     /// # Arguments
     ///
-    /// * `req` - The incomming HTTP request.
+    /// * `req` - The incoming HTTP request.
     ///
     /// # Returns
     ///
@@ -241,22 +250,21 @@ impl Server {
         Err(HttpError(403, "Bad Token".into()))
     }
 
-    /// Verify the request is using the GET HTTP verb.
+    /// Verify the request is using the GET or POST HTTP verb.
     ///
     /// # Arguments
     ///
-    /// * `req` - The incomming HTTP request.
+    /// * `req` - The incoming HTTP request.
     ///
     /// # Returns
     ///
-    /// * `Ok(())` - If the GET verb/method is use.
-    /// * `Err((u16, String))` - A 405 error codde and message when GET is not used.
+    /// * `Ok(())` - If the GET or POST verb/method is use.
+    /// * `Err((u16, String))` - A 405 error codde and message when GET or POST is not used.
     #[doc(hidden)]
     fn validate_method(&self, req: &Request<IncomingBody>) -> Result<(), HttpError> {
-        if *req.method() == Method::GET {
-            return Ok(());
+        match *req.method() {
+            Method::GET | Method::POST => Ok(()),
+            _ => Err(HttpError(405, "Method not allowed".into())),
         }
-
-        Err(HttpError(405, "Not allowed".into()))
     }
 }
